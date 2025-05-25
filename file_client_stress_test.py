@@ -14,22 +14,15 @@ def send_command(command_str=""):
     try:
         logging.warning(f"sending message ")
         sock.sendall((command_str + "\r\n").encode())
-        # sock.sendall(command_str.encode()) # old version
-        # Look for the response, waiting until socket is done (no more data)
-        data_received="" #empty string
+        data_received=""
         while True:
-            #socket does not receive all data at once, data comes in part, need to be concatenated at the end of process
             data = sock.recv(16)
             if data:
-                #data is not empty, concat with previous content
                 data_received += data.decode()
                 if "\r\n\r\n" in data_received:
                     break
             else:
-                # no more data, stop the process by break
                 break
-        # at this point, data_received (string) will contain all data coming from the socket
-        # to be able to use the data_received as a dict, need to load it using json.loads()
         hasil = json.loads(data_received)
         logging.warning("data received from server:")
         return hasil
@@ -54,7 +47,6 @@ def remote_get(filename=""):
     command_str=f"GET {filename}"
     hasil = send_command(command_str)
     if (hasil['status']=='OK'):
-        #proses file dalam bentuk base64 ke bentuk bytes
         namafile= hasil['data_namafile']
         isifile = base64.b64decode(hasil['data_file'])
         fp = open(namafile,'wb+')
@@ -88,8 +80,6 @@ def remote_download(filename="", dest_file=""):
     hasil = send_command(command_str)
     if (hasil['status']=='OK'):
         namafile= hasil['data_namafile']
-        # s_split = namafile.split(".")
-        # result = f"{s_split[0]}_download.{s_split[1]}"
         isifile = base64.b64decode(hasil['data_file'])
         fp = open(dest_file,'wb+')
         fp.write(isifile)
@@ -102,30 +92,18 @@ def remote_download(filename="", dest_file=""):
         return False
 
 def thread_function(index):
-    print(f"[Thread-{index}] Starting remote_list")
+    command = "remote_download"
+    print(f"[Thread-{index}] Starting {command}")
     start = time.time()
+    remote_download("donalbebek.jpg", "donalbebekdownload.jpg")
     # remote_list()
-    isi_file = get_binary_from_file("file_10mb.txt")
-    remote_upload("stress_test_10mb.txt", isi_file)
+    # isi_file = get_binary_from_file("file_10mb.txt") # works 1 worker
+    # isi_file = get_binary_from_file("file_50mb.txt") # works 1 worker
+    # isi_file = get_binary_from_file("file_100mb.txt") # works 1 worker
+    # remote_upload("stress_test_10mb.txt", isi_file)
     end = time.time()
-    print(f"[Thread-{index}] Finished remote_list")
+    print(f"[Thread-{index}] Finished {command}")
     print(f"Waktu eksekusi: {end - start} detik")
-
-# Jumlah thread yang ingin dijalankan secara bersamaan
-# NUM_THREADS = 5
-# if __name__=='__main__':
-#     server_address=('172.16.16.101', 46666)
-#     threads = []
-#     for i in range(NUM_THREADS):
-#         t = threading.Thread(target=thread_function, args=(i,))
-#         threads.append(t)
-#         t.start()
-
-#     # Tunggu semua thread selesai
-#     for t in threads:
-#         t.join()
-
-#     print("Semua thread telah selesai.")
 
 def get_binary_from_file(nama_file=""):
     with open(f'{nama_file}', 'r', encoding='utf-8') as file:
@@ -139,17 +117,16 @@ def get_binary_from_file(nama_file=""):
 
 if __name__ == '__main__':
     server_address = ('172.16.16.101', 46666)
-    num_of_workers = 5  # Jumlah thread / worker yang ingin dijalankan
+    num_of_workers = 1
 
     start_time = time.time()
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_of_workers) as executor:
-        # Kirim semua task ke thread pool
+
         futures = [executor.submit(thread_function, i) for i in range(num_of_workers)]
 
-        # Tunggu semua task selesai
         for future in concurrent.futures.as_completed(futures):
-            future.result()  # Bisa menangkap exception jika ada
+            future.result()
 
     end_time = time.time()
     print(f"\nSemua thread selesai. Total waktu eksekusi: {end_time - start_time:.2f} detik")
