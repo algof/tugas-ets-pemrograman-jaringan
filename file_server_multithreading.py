@@ -1,10 +1,12 @@
 import time
 import sys
+
 from socket import *
 import socket
 import threading
 import logging
 from concurrent.futures import ThreadPoolExecutor
+
 from file_protocol import  FileProtocol
 fp = FileProtocol()
 
@@ -14,7 +16,9 @@ def handle_client(connection, address):
         while True:
             data = b''
             while not data.endswith(b'\r\n'):
-                part = connection.recv(1)
+                # part = connection.recv(4096) # 4MB
+                # part = connection.recv(10240) # 10MB
+                part = connection.recv(51200) # 50MB
                 if not part:
                     break
                 data += part
@@ -50,14 +54,14 @@ class Server(threading.Thread):
                     logging.warning(f"Connection from {addr}")
                     self.executor.submit(handle_client, conn, addr)
                 except OSError:
-                    break  
+                    break
         except KeyboardInterrupt:
             logging.warning("Server stopped by user (KeyboardInterrupt)")
         finally:
             logging.warning("Shutting down thread pool and closing socket...")
             self.my_socket.close()
             self.executor.shutdown(wait=True)
-
+            
 def main():
     svr = Server(ipaddress='0.0.0.0', port=46666, max_workers=5)
     svr.start()
