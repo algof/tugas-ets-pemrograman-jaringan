@@ -16,9 +16,11 @@ def send_command(command_str=""):
         sock.sendall((command_str + "\r\n").encode())
         data_received=""
         while True:
-            # data = sock.recv(10240) # 10MB
+            data = sock.recv(1024) # 1MB
             # data = sock.recv(4096) # 4MB
-            data = sock.recv(51200) # 50MB
+            # data = sock.recv(10240) # 10MB
+            # data = sock.recv(51200) # 50MB
+            # data = sock.recv(102400) # 100MB
             if data:
                 data_received += data.decode()
                 if "\r\n\r\n" in data_received:
@@ -97,8 +99,8 @@ def thread_function(index):
     print(f"[Thread-{index}] Starting {command}")
     start = time.time()
     # success = remote_download("file_10mb.txt", "hasildownload_10mb.txt")
-    success = remote_download("file_50mb.txt", "hasildownload_50mb.txt")
-    success = remote_download("file_50mb.txt", "hasildownload_100mb.txt")
+    # success = remote_download("file_50mb.txt", "hasildownload_50mb.txt")
+    success = remote_download("file_100mb.txt", "hasildownload_100mb.txt")
     # remote_list()
     # isi_file = get_binary_from_file("file_10mb.txt") # works 1,5
     # isi_file = get_binary_from_file("file_50mb.txt") # works 1 worker
@@ -121,7 +123,7 @@ def get_binary_from_file(nama_file=""):
 
 if __name__ == '__main__':
     server_address = ('172.16.16.101', 46666)
-    num_of_workers = 50
+    num_of_workers = 1
     
     start_time = time.time()
     success_count = 0

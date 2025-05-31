@@ -16,9 +16,11 @@ def handle_client(connection, address):
         while True:
             data = b''
             while not data.endswith(b'\r\n'):
+                part = connection.recv(1024) # 1MB
                 # part = connection.recv(4096) # 4MB
                 # part = connection.recv(10240) # 10MB
-                part = connection.recv(51200) # 50MB
+                # part = connection.recv(51200) # 50MB
+                # part = connection.recv(102400) # 100MB
                 if not part:
                     break
                 data += part
@@ -63,7 +65,7 @@ class Server(threading.Thread):
             self.executor.shutdown(wait=True)
             
 def main():
-    svr = Server(ipaddress='0.0.0.0', port=46666, max_workers=5)
+    svr = Server(ipaddress='0.0.0.0', port=46666, max_workers=1)
     svr.start()
     svr.join()
 
